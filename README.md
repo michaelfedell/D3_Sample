@@ -29,7 +29,7 @@ Then, open a browser to `localhost:8000` or whatever port the python server is r
 
 ## Samples
 
-![Sorted by Name](name-sorted.png)
-![Sorted by Height](height-sorted.png)
+![Sorted by Name](img/name-sorted.png)
+![Sorted by Height](img/height-sorted.png)
 
 _Note_: If `index.html` does not render correctly, `simple.html` has the same content but without links to googlefonts or bootstrap
