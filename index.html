@@ -128,6 +128,31 @@
         .attr('width', d => xScale(d.Height))
         .attr('height', yScale.bandwidth())
         .style('fill', d => d.Color);
+
+      // Now we do it all again but sorted by Height
+      data.sort((a, b) => a.Height - b.Height);
+      yScale.domain(data.map(d => d.Name));
+
+      xAxisGroup = heightSvg.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', `translate(0, ${height})`)
+        .call(xAxis);
+      yAxisGroup = heightSvg.append('g')
+        .attr('class', 'y axis')
+        .call(yAxis);
+
+
+      heightSvg.selectAll('.bar')
+        .data(data).enter()
+        .append('rect')
+        .attr('class', 'bar')
+        .attr('x', 0)
+        .attr('y', d => yScale(d.Name))
+        .attr('width', d => xScale(d.Height))
+        .attr('height', yScale.bandwidth())
+        .style('fill', d => d.Color)
+
+
     }
   </script>
 </body>
