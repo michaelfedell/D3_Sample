@@ -47,7 +47,7 @@
     </div>
   </div>
 
-  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="./d3.min.js"></script>
   <script>
     // Set sizes for SVGs used
     let margin = { top: 20, right: 20, bottom: 50, left: 120 };
@@ -96,11 +96,9 @@
     colorScale.range(['#3D8DC6', '#968266', '#71B788', '#000', '#707070']);
 
 
-    d3.csv('./StudentNameHeightEye.csv', ready)
+    d3.csv('./StudentNameHeightEye.csv').then(ready).catch(e => console.error(e));
 
-    function ready(error, data) {
-      if (error) return console.warn(error);
-
+    function ready(data) {
       // Format data and reformat name to standard print with preferred name
       data.forEach(d => {
         d.Height = +d.Height;
