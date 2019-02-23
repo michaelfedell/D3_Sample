@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Who's Who in MSiA?</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css?family=Merriweather|Raleway" rel="stylesheet">
+  <style>
+    h1, h2, h3 {
+      font-family: 'Merriweather', sans-serif;
+    }
+
+    * {
+      font-family: 'Raleway', serif;
+    }
+
+    .axis.x line {
+      stroke-width: 1px;
+      stroke: #ccc;
+      stroke-dasharray: 4px 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="title mt-5">
+      <h1>Who's Who in MSiA?</h1>
+      <p>Here we take a look at the heights and eye colors of all students in the MSiA Class of 2019</p>
+      <p class="small"><em>All data is self-reported so the heights may be slightly biased upwards</em> ¯\_(ツ)_/¯</p>
+    </div>
+    <div id="name">
+      <h2>Sorted by Last Name</h2>
+
+    </div>
+    <div id="height" class="my-5">
+      <h2>Sorted by Height</h2>
+
+    </div>
+  </div>
+
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+
+  <script>
+    let margin = { top: 20, right: 20, bottom: 20, left: 120 };
+
+    let width = 960 - margin.left - margin.right;
+    let height = 600 - margin.top - margin.bottom;
+
+    let nameSvg = d3.select('#name').append('svg')
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+      .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+    let heightSvg = d3.select('#height').append('svg')
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+      .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+    let xScale = d3.scaleLinear()
+      .range([0, width]);
+    let yScale = d3.scaleBand()
+      .padding([.1])
+      .rangeRound([height, 0]);
+
+    let xAxis = d3.axisBottom(xScale)
+      .tickSize(-height);
+    let yAxis = d3.axisLeft(yScale);
+
+    d3.csv('./StudentNameHeightEye.csv', ready)
+
+    function ready(error, data) {
+      if (error) return console.warn(error);
+
+      // Format data and reformat name to standard print with preferred name
+      data.forEach(d => {
+        // console.log(d.Name);
+        d.Height = +d.Height;
+        d.Last = d.Name.split(',')[0];
+        if (d.Preferred != '') d.First = d.Preferred;
+        else d.First = d.Name.split(',')[1];
+        d.Name = d.First + ' ' + d.Last;
+        console.log(d['Eye Color']);
+        switch (d['Eye Color']) {
+          case 'Blue':
+            d.Color = '#3D8DC6'
+            break;
+          case 'Brown':
+            d.Color = '#968266'
+            break;
+          case 'Green':
+            d.Color = '#71B788'
+            break;
+          default:
+            d.Color = '#707070'
+            break;
+        }
+      });
+      // Remove students with missing Height values
+      data = data.filter(d => d.Height);
+      // sort by last name
+      data.sort((a, b) => -a.Last.localeCompare(b.Last));
+      // console.log(data)
+
+      xScale.domain([d3.min(data, d => d.Height) - 5, d3.max(data, d => d.Height)]);
+      yScale.domain(data.map(d => d.Name));
+
+      let xAxisGroup = nameSvg.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', `translate(0, ${height})`)
+        .call(xAxis);
+      let yAxisGroup = nameSvg.append('g')
+        .attr('class', 'y axis')
+        .call(yAxis);
+
+      nameSvg.selectAll('.bar')
+        .data(data).enter()
+        .append('rect')
+        .attr('class', 'bar')
+        .attr('x', 0)
+        .attr('y', d => yScale(d.Name))
+        .attr('width', d => xScale(d.Height))
+        .attr('height', yScale.bandwidth())
+        .style('fill', d => d.Color);
+    }
+  </script>
+</body>
+
+</html>
