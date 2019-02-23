@@ -27,4 +27,9 @@ python -m http.server
 
 Then, open a browser to `localhost:8000` or whatever port the python server is running on.
 
+## Samples
+
+![Sorted by Name](name-sorted.png)
+![Sorted by Height](height-sorted.png)
+
 _Note_: If `index.html` does not render correctly, `simple.html` has the same content but without links to googlefonts or bootstrap
