@@ -1,4 +1,4 @@
-# D3_Sample
+# D3 Bar Chart
 
 Visualizing student's height and eye color from MSiA Data Visualization course.
 
