@@ -8,16 +8,41 @@
   <title>States</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
     integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-  <link href="https://fonts.googleapis.com/css?family=Merriweather|Raleway" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Merriweather|Raleway:400,700" rel="stylesheet">
   <style>
-    h1,
-    h2,
-    h3 {
+    h1 {
+      color: #3a4660;
       font-family: 'Merriweather', sans-serif;
+    }
+
+    h3 {
+      color: #ed8a63;
+      font-style: italic;
+      font-weight: 500;
     }
 
     * {
       font-family: 'Raleway', serif;
+    }
+
+    #plot {
+      width: 1000px;
+      height: 600px;
+    }
+
+    circle {
+      stroke: grey;
+      stroke-width: 1;
+    }
+
+    .overlay {
+      position: absolute;
+      font-size: 12px;
+      width: auto;
+      height: auto;
+      pointer-events: none;
+      border-radius: 10px;
+      padding: 5px;
     }
   </style>
 </head>
@@ -25,50 +50,242 @@
 <body>
   <div class="container">
     <div class="title my-5">
-
+      <h1>
+        Population Growth and Economic Factors
+      </h1>
+      <h3>
+        <b>United States Data, 2019</b>
+      </h3>
     </div>
-    <div id="name">
+    <div class="row">
+      <div class="mx-auto" id="plot">
 
+      </div>
     </div>
   </div>
 
-  <script src="/d3.min.js"></script>
+  <script src='/d3.min.js'></script>
   <script>
-    // Set sizes for SVGs used
-    let margin = { top: 20, right: 20, bottom: 50, left: 120 };
-
-    let width = 960 - margin.left - margin.right;
-    let height = 600 - margin.top - margin.bottom;
-
-    let xScale = d3.scaleLinear()
-      .range([0, width]);
-    // Vertical bar chart will have banded yScale
-    let yScale = d3.scaleBand()
-      .padding([.1])
-      .rangeRound([height, 0]);
-
-    let xAxis = d3.axisBottom(xScale)
-      .tickSize(-height);
-    let yAxis = d3.axisLeft(yScale);
-
-    // Set legend position relative to SVG
-    let legendPos = {
-      x: width - margin.right * 4,
-      y: height - 120,
-      width: 10,
-      height: 20
-    };
 
     d3.csv('./states.csv').then(ready).catch(e => console.error(e));
 
     function ready(data) {
       // Format data
       data.forEach(d => {
-
+        d.pop = +d['2018 Population'];
+        d.growth = +d['2018 Growth'].replace('%', '') / 100;
+        d.poverty = +d['Poverty Rate'].replace('%', '') / 100;
+        d.tax = (parseInt(d['Property Tax'].replace('%', '')) +
+          parseInt(d['Income Tax'].replace('%', '')) +
+          parseInt(d['Sales Tax'].replace('%', ''))) / 100;
       });
-      // Remove missing values
-      data = data.filter(d => d);
+      window.data = data;
 
+      draw(data);
+    }
+
+    function draw(data) {
+      // Set sizes for SVGs used
+      let div = document.getElementById("plot");
+
+      let margin = { top: 20, right: 20, bottom: 50, left: 60 };
+      let width = div.clientWidth
+        - margin.left - margin.right;
+      let height = div.clientHeight
+        - margin.top - margin.bottom;
+
+      let svg = d3.select(div).append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+      let xScale = d3.scaleLinear()
+        .range([0, width])
+        .domain(d3.extent(data, d => d.poverty));
+      let yScale = d3.scaleLinear()
+        .range([height, 0])
+        .domain(d3.extent(data, d => d.tax));
+      // limit radius scale output to max 10
+      let rScale = d3.scaleLinear()
+        .range([5, 15])
+        .domain(d3.extent(data, d => d.pop));
+
+      let colorScale = d3.scaleSequential(d3.interpolateRdBu)
+        .domain(d3.extent(data, d => d.growth));
+
+      let xAxis = d3.axisBottom()
+        .scale(xScale)
+        .tickFormat(d3.format('.1%'));
+      let yAxis = d3.axisLeft()
+        .scale(yScale)
+        .tickFormat(d3.format('.1%'));
+
+      let xAxisGroup = svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", `translate(0,${height})`)
+        .call(xAxis);
+
+      let yAxisGroup = svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+
+      // Text label for the x axis
+      svg.append('text')
+        .attr('transform', `translate(${(width / 2)}, ${(height + margin.top + 20)})`)
+        .style('text-anchor', 'middle')
+        .style('color', 'black')
+        .text('Poverty Rate');
+
+      // Text label for the y axis
+      svg.append('text')
+        .attr('y', -margin.left)
+        .attr('x', -height / 2)
+        .attr('dy', '1em')
+        .attr('transform', 'rotate(-90)')
+        .style('text-anchor', 'middle')
+        .text('Total Tax Rate');
+
+      // Add the tooltip container to the vis container
+      let overlay = d3.select("#plot").append("div")
+        .attr("class", "overlay")
+        .style("opacity", 0);
+
+      // tooltip mouseover event handler
+      let tipMouseover = function (d) {
+        let color = d.growth < -0.005 | d.growth > .018 ? 'white' : 'black';
+        console.log(color)
+        let html = `<b>${d.State}</b><br/>` +
+          `<b>Pop Growth: ${d['2018 Growth']}</b><br/>` +
+          `Property: ${d['Property Tax']}<br/>` +
+          `Income: ${d['Income Tax']}<br/>` +
+          `Sales: ${d['Sales Tax']}`
+        overlay
+          .style('background-color', colorScale(d.growth))
+          .style('color', color);
+        overlay.html(html)
+          .style("left", (d3.event.pageX + 15) + "px")
+          .style("top", (d3.event.pageY - 28) + "px")
+          .transition()
+          .duration(300) // ms
+          .style("opacity", .7) // started as 0!
+
+        d3.select(this)
+          .transition()
+          .ease(d3.easeCubic)
+          .duration(300)
+          .attr('r', 2 * rScale(d.pop))
+
+      };
+      // tooltip mouseout event handler
+      let tipMouseout = function (d) {
+        overlay.transition()
+          .duration(300) // ms
+          .style("opacity", 0); // don't care about position!
+
+        d3.select(this)
+          .transition()
+          .ease(d3.easeCubic)
+          .duration(500)
+          .attr('r', rScale(d.pop))
+      };
+
+      svg.selectAll('.point')
+        .data(data)
+        .enter().append('circle')
+        .attr('class', 'point')
+        .attr('r', d => rScale(d.pop))
+        .attr('cx', d => xScale(d.poverty))
+        .attr('cy', d => yScale(d.tax))
+        .style('fill', d => colorScale(d.growth))
+        .on('mouseenter', tipMouseover)
+        .on('mouseleave', tipMouseout)
+
+
+
+      // Define and draw color scale legend
+      let legendPos = {
+        height: 20,
+        width: 200,
+        x: width - margin.right - 200,
+        y: margin.top
+      }
+      // First we create "defs", d3's way of defining stop points for a continuous scale
+      let defs = svg.append('defs');
+      let linearGradient = defs.append('linearGradient')
+        .attr('id', 'linear-gradient');
+
+      linearGradient.selectAll('stop')
+        .data(colorScale.ticks().map((t, i, n) => ({ offset: `${100 * i / n.length}%`, color: colorScale(t) })))
+        .enter().append('stop')
+        .attr('offset', d => d.offset)
+        .attr('stop-color', d => d.color);
+
+      // Now we can attach the actual legend graphic
+      let legend = svg.append('g')
+        .attr('class', 'legend')
+        .attr('transform', `translate(${legendPos.x}, ${legendPos.y})`);
+      // Bar for legend's color gradient
+      legend
+        .append('rect')
+        .attr('transform', `translate(0, ${-legendPos.height})`)
+        .attr('width', legendPos.width)
+        .attr('height', legendPos.height)
+        .style('fill', 'url(#linear-gradient');
+      // We now need a scale for the linear gradient's axis
+      let legendScale = d3.scaleLinear()
+        .domain(colorScale.domain())
+        .range([0, legendPos.width])
+      let legendAxis = d3.axisBottom(legendScale)
+        .ticks(7, '.1%').tickSize(0);
+      // Attach the axis to our legend group
+      legend
+        .append('g')
+        .attr('class', 'legend-axis')
+        .call(legendAxis);
+      // And finally, tack on a label
+      legend.append('text')
+        .attr('class', 'legend-label')
+        .attr('transform', `translate(${legendPos.width / 2}, ${-legendPos.height - 10})`)
+        .style('text-anchor', 'middle')
+        .style('font-size', 12)
+        .style('color', 'black')
+        .text('Color: Population Growth')
+
+      // Now we will draw one more legend for bubble sizes
+      // here we will take a more manual approach, drawing three
+      // example bubbles with size and labels
+
+      let min = d3.min(data, d => d.pop),
+          max = d3.max(data, d => d.pop);
+      let examples = [min, (max - min) / 2, max]
+      let bubbleLegend = legend.append('g')
+        .attr('transform', `translate(0, ${legendPos.height + 45})`)
+        .attr('class', 'bubble-legend')
+      bubbleLegend.append('text')
+        .attr('class', 'legend-label')
+        .attr('transform', `translate(${legendPos.width / 2}, -20)`)
+        .style('text-anchor', 'middle')
+        .style('font-size', 12)
+        .style('color', 'black')
+        .text('Size: Total Population (100k)')
+
+      let bubbleGroups = bubbleLegend.selectAll('.example-bubble')
+        .data(examples)
+        .enter().append('g')
+        .attr('class', 'example-bubble')
+      bubbleGroups.append('circle')
+        .attr('class', 'bubble')
+        .attr('r', d => rScale(d))
+        .attr('cx', (d, i) => (i + 1) * legendPos.width / (examples.length + 1))
+        .attr('cy', 0)
+        .style('fill', '#c9af98')
+      bubbleGroups.append('text')
+        .attr('class', 'label')
+        .attr('transform', (d, i) => `translate(${(i + 1) * legendPos.width / (examples.length + 1)}, 25)`)
+        .style('text-anchor', 'middle')
+        .style('font-size', 12)
+        .text(d => d3.format(',.3r')(d / 100000))
     }
   </script>
 </body>
