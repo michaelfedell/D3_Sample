@@ -16,6 +16,16 @@ Write a d3/javascript program that reads in the [states.csv](./states.csv) file 
 
 Be sure to include a descriptive title for each chart, axes, axis label for the numeric axis, tick marks, tick labels, grid lines, and a legend for the color encoding. Follow the design principles in the lecture notes for good chart design.
 
+## Features
+
+- Diverging color scale
+- Animation on mouse hover
+- Tooltips with background color matching points
+- Tooltip text adjusted to maximize contrast
+- Chart takes up full screen on window load
+- Legend for continuous color scale
+- Legend for bubble size
+
 ## Getting Started
 
 This static visualization can be viewed by serving the file up for your browser via your favorite server engine.
@@ -30,4 +40,4 @@ Then, open a browser to `localhost:8000` or whatever port the python server is r
 
 ## Samples
 
-![Sample1](img/???.png)
+![Sample1](img/example.png)
